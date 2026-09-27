@@ -216,3 +216,16 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+# PlatformIO
+.pio/
+.vscode/
+
+# 密碼
+firmware/include/secrets.h
+
+# Blender 自動備份
+*.blend1
+*.blend2
+
+# 修正 Python 範本誤擋的資料夾
+!firmware/lib/
