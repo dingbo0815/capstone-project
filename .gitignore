@@ -229,3 +229,4 @@ firmware/include/secrets.h
 
 # 修正 Python 範本誤擋的資料夾
 !firmware/lib/
+firmware/logs/
