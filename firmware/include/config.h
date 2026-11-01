@@ -5,7 +5,7 @@
 // ---- 腳位 ----
 #define PIN_PWM           25   // TEC PWM，經 TC4420 驅動 MOSFET
 #define PIN_DHT           4
-#define PIN_ONEWIRE       18
+#define PIN_ONEWIRE       23
 #define PIN_FAN           19
 #define PIN_LID_BTN       32   // 開蓋標記按鈕，內部上拉
 #define PIN_NTC           34   // ADC1，Wi-Fi 開啟時仍可用
