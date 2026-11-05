@@ -22,6 +22,15 @@ bool inaOk = false;
 bool oledOk = false;
 int dsCount = 0;
 
+// 每顆探頭的用途和位址綁在一起
+// name：序列監控用（可以中文）；tag：OLED 用（字型只有英文）
+struct DsProbe { const char* name; const char* tag; const uint8_t* addr; };
+const DsProbe probes[3] = {
+  {"冷端", "COLD", DS_COLD},
+  {"環境", "AMB ", DS_AMB},
+  {"備用", "SPR ", DS_SPARE},
+};
+
 // ---- I2C 掃描：列出所有回應的位址 ----
 void scanI2C() {
   Serial.println("[I2C] 掃描中...");
@@ -136,8 +145,10 @@ void loop() {
 
   // DS18B20
   ds.requestTemperatures();
-  float tDs[3] = {NAN, NAN, NAN};
-  for (int i = 0; i < dsCount && i < 3; i++) tDs[i] = ds.getTempCByIndex(i);
+  float tDs[3];
+  for (int i = 0; i < 3; i++) {
+    tDs[i] = ds.getTempC(probes[i].addr);   // 用位址指定，跟插的順序、有幾顆都無關
+  }
 
   // NTC
   float tNtc, vNtc, rNtc;
@@ -149,8 +160,12 @@ void loop() {
 
   // ---- 序列監控 ----
   Serial.printf("DHT22   : %6.2f °C  %5.1f %%\n", tDht, rh);
-  for (int i = 0; i < dsCount && i < 3; i++)
-    Serial.printf("DS18B20#%d: %6.2f °C\n", i, tDs[i]);
+  for (int i = 0; i < 3; i++) {
+    if (tDs[i] == DEVICE_DISCONNECTED_C)     // 函式庫讀失敗時回傳 -127
+      Serial.printf("DS %s : 讀不到（沒接或接觸不良）\n", probes[i].name);
+    else
+      Serial.printf("DS %s : %6.2f °C\n", probes[i].name, tDs[i]);
+  } 
   if (ntcSt == NTC_OK)
     Serial.printf("NTC     : %6.2f °C  (%.3f V, %.0f Ω)\n", tNtc, vNtc, rNtc);
   else
@@ -167,7 +182,13 @@ void loop() {
     // 最多 6 行（DHT、DS×3、NTC、INA）× 8 像素 = 48，從 8 開始到 56，還在 64 以內
     oled.setCursor(0, 8);
     oled.printf("DHT %.1fC %.0f%%\n", tDht, rh);
-    for (int i = 0; i < dsCount && i < 3; i++) oled.printf("DS%d %.2fC\n", i, tDs[i]);
+    for (int i = 0; i < 3; i++){
+      if((tDs[i] == DEVICE_DISCONNECTED_C)){
+        oled.printf("DS%s --\n",probes[i].tag);
+      }
+      else{
+        oled.printf("%s %.2fC\n", probes[i].tag, tDs[i]);
+      }  
     if (ntcSt == NTC_OK) oled.printf("NTC %.1fC\n", tNtc);
     else oled.printf("NTC %s\n", ntcSt == NTC_OPEN ? "OPEN!" : "SHORT!");   // OLED 字型沒有中文
     oled.printf("INA %.2fV %.1fmA\n", vBus, iBus);
